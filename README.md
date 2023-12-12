@@ -4,39 +4,33 @@ Block-Vote is a blockchain-based voting system that aims to provide a secure and
 
 ## Table of Contents
 
-- [Introduction](#introduction)
+- [Description](#description)
 - [Features](#features)
-- [Getting Started](#getting-started)
 - [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 
-## Introduction
 
-Block-Vote is built using Hyperledger Fabric, a permissioned blockchain framework. It leverages the immutability and transparency of blockchain technology to ensure the integrity of the voting process.
+## Description
+
+BlockVote is a blockchain-based voting system that aims to provide a secure and transparent voting process for your election needs.The application will be built on Hyperledger Fabric. BlockVote can be utilised by any organisation that is holding an election as a plug-and-play framework with minimal overhead. An administrator setting up the application needs to input the candidate profiles and respective campaign information to initialise the application. Once initialised, the application will allow users to authenticate and cast a singular, anonymous vote. The voting ends after a specified voting period and the election results are displayed.
 
 ## Features
 
-- Secure and tamper-proof voting system
-- Transparent and auditable voting records
-- Permissioned access for participants
-- Easy deployment and configuration
+The project will have the following features upon completion:
+A fully-functional Frontend where users can:
+- Authenticate (voter)
+- View candidate profiles with their campaign information (voter)
+- Add/Remove candidates from the election (admin)
+- Candidate-wise votes can be inspected and audited (admin)
+- Force-stop the election (admin)
+- View the results of the election once voting time is over (everyone)
 
-## Getting Started
-
-To get started with Block-Vote, follow these steps:
-
-1. Clone the repository: `git clone https://github.com/fabric-samples/block-vote.git`
-2. Install the required dependencies: `npm install`
-3. Configure the network and participants: [link to configuration guide]
-4. Start the blockchain network: `./network.sh up`
-5. Deploy the smart contract: `./contract.sh deploy`
-6. Start the application: `npm start`
+A Backend powered by Hyperledger Fabric where:
+- Candidate profiles are stored
+- Voter information is stored in a secure, untraceable manner
+- Legitimate voting is verified before cast is ensured
+- The voting system logic on the permissioned blockchain is handled
+- The candidate database is updated every time the ledger is updated with a new cast vo
 
 ## Usage
 
-Once the application is up and running, participants can access the voting system through a web interface [TODO]. They can cast their votes, view voting results, and monitor the progress of the election.
-
-## License
-
-<!-- This project is licensed under the [MIT License](LICENSE). -->
+Once the application is up and running, participants can access the voting system through a web interface [TODO]. They can cast their votes, view voting results, and monitor the progress of the election. For now, you can test it out by running `starter.sh`.
