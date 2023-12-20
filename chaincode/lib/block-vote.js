@@ -39,71 +39,75 @@ class BLOCK_VOTE extends Contract {
   // RegisterVoter registers a new voter
   async RegisterVoter(ctx, voterID) {
     console.log(`============= START : Register Voter ${voterID} ===========`);
+    try {
+      // check if voter already exists
+      const voterAsBytes = await ctx.stub.getState(voterID);
+      if (voterAsBytes.toString()) {
+        throw new Error('Voter already exists');
+      }
+      let new_voter = {
+        "voterID": voterID,
+        "voted_for": null
+      }
+      console.log(new_voter);
+      // update state with new voter
+      await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(new_voter))));
 
-    // check if voter already exists
-    const voterAsBytes = await ctx.stub.getState(voterID);
-    if (voterAsBytes.toString()) {
-      throw new Error('Voter already exists');
+    } catch (error) {
+      throw new Error('Error in RegisterVoter: ' + error);
     }
-
-
-    let new_voter = {
-      "voterID": voterID,
-      "voted_for": null
-    }
-    console.log(new_voter);
-    // update state with new voter
-    await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(new_voter))));
     console.log('============= END : Register Voter ===========');
   }
 
   // cast vote
   async CastVote(ctx, voterID, candidateName) {
     console.log('============= START : Cast Vote ===========');
-
-    // check if voter exists
-    const voterAsBytes = await ctx.stub.getState(voterID);
-    if (!voterAsBytes.toString()) {
-      throw new Error('Voter does not exist');
-    }
-
-    // check if voter has already voted
-    const voter = JSON.parse(voterAsBytes.toString());
-    if (voter.voted_for) {
-      throw new Error('Voter has already voted! A voter may only vote once ...');
-    }
-    console.log(candidateName);
-    // log candidates array
-    console.log(candidates);
-    // check if candidate exists from candidates array global variable
-    let candidateExists = false;
-    for (const candidate of data.candidates) {
-      if (candidate.name === candidateName) {
-        candidateExists = true;
-        break;
+    try {
+      // check if voter exists
+      const voterAsBytes = await ctx.stub.getState(voterID);
+      if (!voterAsBytes.toString()) {
+        throw new Error('Voter does not exist');
       }
-    }
-    if (!candidateExists) {
-      throw new Error('Candidate does not exist!');
-    }
-
-    // update voter object
-    voter.voted_for = candidateName;
-
-    // update candidate object in state
-    for (const candidate of data.candidates) {
-      if (candidate.name === candidateName) {
-        candidate.votes += 1;
-        await ctx.stub.putState(candidate.name, Buffer.from(stringify(sortKeysRecursive(candidate))));
-        console.log(candidate);
-        break;
+      // check if voter has already voted
+      const voter = JSON.parse(voterAsBytes.toString());
+      if (voter.voted_for) {
+        throw new Error('Voter has already voted! A voter may only vote once ...');
       }
+      console.log(candidateName);
+      // log candidates array
+      console.log(candidates);
+      // check if candidate exists from candidates array global variable
+      let candidateExists = false;
+      for (const candidate of data.candidates) {
+        if (candidate.name === candidateName) {
+          candidateExists = true;
+          break;
+        }
+      }
+      if (!candidateExists) {
+        throw new Error('Candidate does not exist!');
+      }
+
+      // update voter object
+      voter.voted_for = candidateName;
+
+      // update candidate object in state
+      for (const candidate of data.candidates) {
+        if (candidate.name === candidateName) {
+          candidate.votes += 1;
+          await ctx.stub.putState(candidate.name, Buffer.from(stringify(sortKeysRecursive(candidate))));
+          console.log(candidate);
+          break;
+        }
+      }
+      console.log(voter);
+      // update state
+      await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(voter))));
+      // TODO: Update DB with new Candidates Array (for vote counting)
+      console.log('============= END : Cast Vote ===========');
+    } catch (error) {
+      throw new Error('Error in CastVote: ' + error);
     }
-    console.log(voter);
-    // update state
-    await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(voter))));
-    // TODO: Update DB with new Candidates Array (for vote counting)
-    console.log('============= END : Cast Vote ===========');
   }
 
   // count votes for each candidate
