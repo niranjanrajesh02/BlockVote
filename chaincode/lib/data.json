@@ -2,15 +2,17 @@
   "candidates": [
     {
       "name": "Nishtha Das",
-      "votes": 0
-    },
+      "votes": 0,
+      "info": "I like blockchain and cryptocurrencies!"},
     {
       "name": "Adit Dhawan",
-      "votes": 43
+      "votes": 43,
+      "info": "Lorem ipsum dolor sit amet, consectetur adipisicing elit.Ex cupiditate delectus temporibus eos voluptatibus reprehenderit maiores deleniti debitis repellendus laboriosam"
     },
     {
       "name": "Chanchal Bajoria",
-      "votes": 12
+      "votes": 23,
+      "info": "Lorem ipsum dolor sit amet, consectetur adipisicing elit.Ex cupiditate delectus temporibus eos voluptatibus reprehenderit maiores deleniti debitis repellendus laboriosam"
     }
   ]
 }

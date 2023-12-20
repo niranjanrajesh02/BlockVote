@@ -1,13 +1,12 @@
-# Block-Vote
+# BlockVote
 
-Block-Vote is a blockchain-based voting system that aims to provide a secure and transparent voting process for your election needs. Block-Vote is an implementation for my final project for CS-2361: Blockchain and Cryptocurrencies
+BlockVote is a blockchain-based voting system that aims to provide a secure and transparent voting process for your election needs. BlockVote is an implementation for my final project for CS-2361: Blockchain and Cryptocurrencies
 
 ## Table of Contents
 
 - [Description](#description)
 - [Features](#features)
 - [Usage](#usage)
-
 
 ## Description
 
@@ -17,6 +16,7 @@ BlockVote is a blockchain-based voting system that aims to provide a secure and 
 
 The project will have the following features upon completion:
 A fully-functional Frontend where users can:
+
 - Authenticate (voter)
 - View candidate profiles with their campaign information (voter)
 - Add/Remove candidates from the election (admin)
@@ -25,6 +25,7 @@ A fully-functional Frontend where users can:
 - View the results of the election once voting time is over (everyone)
 
 A Backend powered by Hyperledger Fabric where:
+
 - Candidate profiles are stored
 - Voter information is stored in a secure, untraceable manner
 - Legitimate voting is verified before cast is ensured
@@ -33,4 +34,13 @@ A Backend powered by Hyperledger Fabric where:
 
 ## Usage
 
-Once the application is up and running, participants can access the voting system through a web interface [TODO]. They can cast their votes, view voting results, and monitor the progress of the election. For now, you can test it out by running `starter.sh`.
+Once the application is up and running, participants can access the voting system through a web interface.
+
+### Start Server
+
+`node application-javascript/app.js`
+The above command starts a server at localhost:4000 which serves a conncection to the HyperLedger fabric backend of BlockVote. The backend is constructed using node.js and Express.
+
+### Start Frontend
+
+Navigate to `application-javascript/frontend` and run `npm start` to access the frontend. The frontend is constructed using React.js (Next.js). The frontend will run at localhost:3000.

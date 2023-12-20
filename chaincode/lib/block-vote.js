@@ -27,7 +27,8 @@ class BLOCK_VOTE extends Contract {
     for (const candidate of data.candidates) {
       let new_candidate = {
         "name": candidate.name,
-        "votes": candidate.votes
+        "votes": candidate.votes,
+        "info": candidate.info || ""
       }
       candidates.push(new_candidate);
       await ctx.stub.putState(candidate.name, Buffer.from(stringify(sortKeysRecursive(candidate))));
@@ -138,6 +139,14 @@ class BLOCK_VOTE extends Contract {
 
     // return vote_counter object
     return stringify(sortKeysRecursive(sortedVoteCounter));
+  }
+
+  // return candidates
+  async GetCandidates(ctx) {
+    console.log('============= START : Get Candidates ===========');
+    console.log(candidates);
+    console.log('============= END : Get Candidates ===========');
+    return stringify(sortKeysRecursive(candidates));
   }
 
 
