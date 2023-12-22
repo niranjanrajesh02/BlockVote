@@ -11,13 +11,16 @@ const { log } = require('console');
 const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
 const FabricCAServices = require('fabric-ca-client');
+const cors = require('cors');
+
 
 const app = express();
 const port = 4000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 
-// create a new transaction
+// query number of votes
 app.get('/count', async (req, res) => {
   try {
     // load the network configuration
@@ -25,7 +28,7 @@ app.get('/count', async (req, res) => {
 
     const wallet = await buildWallet(Wallets, walletPath);
 
-    let voterName = 'niranjan'; // Specify the identity label created during user registration
+    let voterName = 'voter1'; // Specify the identity label created during user registration
     const identityLabel = crypto.createHash('sha1').update(voterName).digest('hex');
     const identity = await wallet.get(identityLabel);
     if (!identity) {
@@ -57,7 +60,7 @@ app.get('/count', async (req, res) => {
     await gateway.disconnect();
 
     // send response
-    res.send('Transaction has been submitted.\nResult: ' + result.toString());
+    res.send(result.toString());
 
   } catch (error) {
     console.error(`Failed to submit transaction: ${error}`);
@@ -65,7 +68,103 @@ app.get('/count', async (req, res) => {
   }
 });
 
-// vote transaction
+// get candidates
+app.get('/candidates', async (req, res) => {
+  try {
+    // load the network configuration
+    const ccp = buildCCPOrg1();
+
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    let voterName = 'voter1'; // Specify the identity label created during user registration
+    const identityLabel = crypto.createHash('sha1').update(voterName).digest('hex');
+    const identity = await wallet.get(identityLabel);
+    if (!identity) {
+      console.log(`An identity for the user ${identityLabel} does not exist in the wallet.`);
+      console.log('Run the registerUser.js application before retrying.');
+      return;
+    }
+
+    // create a new gateway for connecting to our peer node
+    const gateway = new Gateway();
+    await gateway.connect(ccp, {
+      wallet,
+      identity: identityLabel,
+      discovery: { enabled: true, asLocalhost: true }
+    });
+
+    // get the network (channel) our contract inods deployed to
+    const network = await gateway.getNetwork('mychannel');
+
+    // get the contract from the network
+    const contract = network.getContract('block-vote');
+
+    // create a new transaction
+    console.log('\n--> Get Candidates:\n');
+    let result = await contract.submitTransaction('GetCandidates');
+    console.log('*** Result: Got Candidates');
+    console.log(`Transaction result: ${result.toString()}`);
+    // disconnect from the gateway
+    await gateway.disconnect();
+
+    // send response
+    res.send(result.toString());
+
+  } catch (error) {
+    console.error(`Failed to submit transaction: ${error}`);
+    // process.exit(1);
+  }
+});
+
+// audit election 
+app.get('/audit', async (req, res) => {
+  try {
+    // load the network configuration
+    const ccp = buildCCPOrg1();
+
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    let voterName = 'voter1'; // Specify the identity label created during user registration
+    const identityLabel = crypto.createHash('sha1').update(voterName).digest('hex');
+    const identity = await wallet.get(identityLabel);
+    if (!identity) {
+      console.log(`An identity for the user ${identityLabel} does not exist in the wallet.`);
+      console.log('Run the registerUser.js application before retrying.');
+      return;
+    }
+
+    // create a new gateway for connecting to our peer node
+    const gateway = new Gateway();
+    await gateway.connect(ccp, {
+      wallet,
+      identity: identityLabel,
+      discovery: { enabled: true, asLocalhost: true }
+    });
+
+    // get the network (channel) our contract inods deployed to
+    const network = await gateway.getNetwork('mychannel');
+
+    // get the contract from the network
+    const contract = network.getContract('block-vote');
+
+    // create a new transaction
+    console.log('\n--> Auditing Election:\n');
+    let result = await contract.submitTransaction('AuditElection');
+    console.log('*** Result: Served Audit Results');
+    console.log(`Transaction result: ${result.toString()}`);
+    // disconnect from the gateway
+    await gateway.disconnect();
+
+    // send response
+    res.send(result.toString());
+
+  } catch (error) {
+    console.error(`Failed to submit transaction: ${error}`);
+    // process.exit(1);
+  }
+});
+
+// cast vote transaction
 app.post('/vote', async (req, res) => {
   try {
     // load the network configuration
@@ -114,6 +213,7 @@ app.post('/vote', async (req, res) => {
 app.post('/register', async (req, res) => {
   try {
     let userName = req.body.userName;
+    console.log("User name: " + userName);
     const ccp = buildCCPOrg1();
     // build an instance of the fabric ca services client based on
     // the information in the network configuration
@@ -125,8 +225,6 @@ app.post('/register', async (req, res) => {
     // in a real application this would be done on an administrative flow, and only once
     await enrollAdmin(caClient, wallet, mspOrg1);
 
-    // remove user from wallet if exists
-
     // userID is the SHA256 hash of the user's name
     let userID;
     userID = crypto.createHash('sha1').update(userName).digest('hex');
@@ -134,57 +232,59 @@ app.post('/register', async (req, res) => {
     const userIdentity = await wallet.get(userID);
     if (userIdentity) {
       console.log(`An identity for the user ${userID} already exists in the wallet`);
-      throw new error(`An identity for the user ${userID} already exists in the wallet`);
+      res.send("User already exists");
+    }
+    else {
+      // Must use an admin to register a new user
+      const adminIdentity = await wallet.get('admin');
+      if (!adminIdentity) {
+        console.log('An identity for the admin user "admin" does not exist in the wallet');
+        console.log('Run the enrollAdmin.js application before retrying');
+        return;
+      }
+
+      const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
+      const adminUser = await provider.getUserContext(adminIdentity, 'admin');
+      const secret = await caClient.register({
+        enrollmentID: userID,
+        role: 'client'
+      }, adminUser);
+      const enrollment = await caClient.enroll({
+        enrollmentID: userID,
+        enrollmentSecret: secret
+      });
+      const x509Identity = {
+        credentials: {
+          certificate: enrollment.certificate,
+          privateKey: enrollment.key.toBytes(),
+        },
+        mspId: mspOrg1,
+        type: 'X.509',
+      };
+      await wallet.put(userID, x509Identity);
+      console.log(`Successfully registered and enrolled user ${userID} and imported it into the wallet`);
+
+      const gateway = new Gateway();
+      await gateway.connect(ccp, {
+        wallet,
+        identity: userID,
+        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+      });
+      console.log('Connected to Fabric gateway.');
+      const network = await gateway.getNetwork('mychannel');
+
+      const contract = network.getContract('block-vote');
+
+      // RegisterVoter
+      console.log('\n--> Register Voter:\n');
+      await contract.submitTransaction('RegisterVoter', userID);
+      console.log('*** Result: Voter Registered');
+      // disconnect from the gateway
+      await gateway.disconnect();
+      // send response
+      res.send("Voter Registered")
     }
 
-    // Must use an admin to register a new user
-    const adminIdentity = await wallet.get('admin');
-    if (!adminIdentity) {
-      console.log('An identity for the admin user "admin" does not exist in the wallet');
-      console.log('Run the enrollAdmin.js application before retrying');
-      return;
-    }
-
-    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
-    const adminUser = await provider.getUserContext(adminIdentity, 'admin');
-    const secret = await caClient.register({
-      enrollmentID: userID,
-      role: 'client'
-    }, adminUser);
-    const enrollment = await caClient.enroll({
-      enrollmentID: userID,
-      enrollmentSecret: secret
-    });
-    const x509Identity = {
-      credentials: {
-        certificate: enrollment.certificate,
-        privateKey: enrollment.key.toBytes(),
-      },
-      mspId: mspOrg1,
-      type: 'X.509',
-    };
-    await wallet.put(userID, x509Identity);
-    console.log(`Successfully registered and enrolled user ${userID} and imported it into the wallet`);
-
-    const gateway = new Gateway();
-    await gateway.connect(ccp, {
-      wallet,
-      identity: userID,
-      discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
-    });
-    console.log('Connected to Fabric gateway.');
-    const network = await gateway.getNetwork('mychannel');
-
-    const contract = network.getContract('block-vote');
-
-    // RegisterVoter
-    console.log('\n--> Register Voter:\n');
-    await contract.submitTransaction('RegisterVoter', userID);
-    console.log('*** Result: Voter Registered');
-    // disconnect from the gateway
-    await gateway.disconnect();
-    // send response
-    res.send("Voter Registered")
 
   } catch (error) {
     res.send("Transaction failed: " + error)

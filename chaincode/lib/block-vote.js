@@ -16,6 +16,7 @@ const fs = require('fs');
 
 
 const candidates = [];
+const voters = [];
 
 
 class BLOCK_VOTE extends Contract {
@@ -37,6 +38,15 @@ class BLOCK_VOTE extends Contract {
     console.log('============= Chaincode Instantiated Successfully ===========');
   }
 
+  // Get Candidates
+  async GetCandidates(ctx) {
+    console.log('============= START : Get Candidates ===========');
+    console.log(candidates);
+    console.log('============= END : Get Candidates ===========');
+    return stringify(sortKeysRecursive(candidates));
+  }
+
+
   // RegisterVoter registers a new voter
   async RegisterVoter(ctx, voterID) {
     console.log(`============= START : Register Voter ${voterID} ===========`);
@@ -50,8 +60,7 @@ class BLOCK_VOTE extends Contract {
         "voterID": voterID,
         "voted_for": null
       }
-      console.log(new_voter);
-      // update state with new voter
+      voters.push(new_voter);
       await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(new_voter))));
 
     } catch (error) {
@@ -104,7 +113,7 @@ class BLOCK_VOTE extends Contract {
       console.log(voter);
       // update state
       await ctx.stub.putState(voterID, Buffer.from(stringify(sortKeysRecursive(voter))));
-      // TODO: Update DB with new Candidates Array (for vote counting)
+
       console.log('============= END : Cast Vote ===========');
     } catch (error) {
       throw new Error('Error in CastVote: ' + error);
@@ -149,6 +158,22 @@ class BLOCK_VOTE extends Contract {
     return stringify(sortKeysRecursive(candidates));
   }
 
+  // audit election
+  async AuditElection(ctx) {
+    console.log('============= START : Audit Election ===========');
+    // get all voters by iterating through the voterIDs in the voter array global variable
+    const allVotersArray = [];
+    for (const voter of voters) {
+      const voterAsBytes = await ctx.stub.getState(voter.voterID);
+      if (voterAsBytes.toString()) {
+        const voterObj = JSON.parse(voterAsBytes.toString());
+        allVotersArray.push(voterObj);
+      }
+    }
+    console.log(allVotersArray);
+    console.log('============= END : Audit Election ===========');
+    return stringify(sortKeysRecursive(allVotersArray));
+  }
 
 }
 
