@@ -43,4 +43,4 @@ The above command starts a server at localhost:4000 which serves a conncection t
 
 ### Start Frontend
 
-Navigate to `application-javascript/frontend` and run `npm start` to access the frontend. The frontend is constructed using React.js (Next.js). The frontend will run at localhost:3000.
+Navigate to `application-javascript/frontend/block-vote` and run `npm run start` or `npm run dev` to start the frontend application. The frontend is constructed using React.js (using Next.js). The frontend will run at localhost:3000.
